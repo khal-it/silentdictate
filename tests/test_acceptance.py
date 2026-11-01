@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import pty
 import re
 import socket
 import subprocess
@@ -116,6 +115,7 @@ HARNESS = textwrap.dedent(
 
 def run_pty(text: str, auto_submit: bool) -> bytes:
     """Deliver text to a real child process on a pty and return the bytes it read."""
+    pty = pytest.importorskip("pty", reason="POSIX only")
     master, slave = pty.openpty()
     child = subprocess.Popen(
         [sys.executable, "-c", HARNESS], stdin=slave, stdout=subprocess.PIPE, close_fds=True

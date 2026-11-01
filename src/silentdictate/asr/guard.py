@@ -41,11 +41,15 @@ class HallucinationGuard:
         self.vad = vad
         self.threshold = threshold
 
-    def has_speech(self, raw: Audio, processed: Audio) -> bool:
+    def speech_ms(self, raw: Audio, processed: Audio) -> float:
         """Check raw energy, then VAD on the normalized audio so faint speech still counts."""
         if rms_db(raw) < MIN_RMS_DB:
-            return False
-        return longest_speech_ms(processed, self.vad, self.threshold) >= MIN_SPEECH_MS
+            return 0.0
+        return longest_speech_ms(processed, self.vad, self.threshold)
+
+    def has_speech(self, raw: Audio, processed: Audio) -> bool:
+        """Return True if the audio holds enough speech to transcribe."""
+        return self.speech_ms(raw, processed) >= MIN_SPEECH_MS
 
     def clean(self, text: str, no_speech_prob: float = 0.0) -> str:
         """Return the text with non-speech markers removed, or "" if it is a phantom."""

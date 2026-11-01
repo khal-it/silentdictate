@@ -1,5 +1,8 @@
 # SilentDictate
 
+[![CI](https://github.com/khal-it/silentdictate/actions/workflows/ci.yml/badge.svg)](https://github.com/khal-it/silentdictate/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Dictate by whispering into the mic you already have. SilentDictate recognizes your speech on your machine, then types the text into the focused window or speaks it into a virtual microphone.
 
 Audio and text stay on your computer. The only network use is downloading models, and there is no telemetry.
@@ -19,6 +22,8 @@ silentdictate doctor
 ```
 
 From a checkout, use `uv sync` and prefix commands with `uv run`.
+
+For the virtual mic's default voice, install the optional Piper extra, which is GPL-3.0-licensed: `uv tool install '.[piper]'`. Without it, the virtual mic uses your OS voice.
 
 ## Quickstart by OS
 
@@ -98,6 +103,7 @@ The main settings are:
 | `allow_newlines` | `false` | Lets "new line" send a newline, which submits in terminals |
 | `asr.backend` | `whisper` | `parakeet` needs `--extra parakeet` |
 | `asr.model` | `large-v3-turbo` | Also tiny, base, small, large-v3, distil-large-v3.5 |
+| `asr.language` | `en` | Set `de`, or leave empty to auto-detect. With `en`, other languages get translated into English |
 | `asr.hotwords` | `[]` | Your names and technical terms |
 | `vad.threshold` | `0.3` | Lower it if real whispers come back empty |
 | `postprocess.replacements` | `{}` | Such as `"pie test" = "pytest"` |
@@ -133,11 +139,20 @@ uv run silentdictate bench --set fixtures
 
 For an optional standalone build: `uv run --extra pyinstaller pyinstaller --name silentdictate --collect-all faster_whisper --collect-all piper src/silentdictate/cli.py`.
 
+## Contributing
+
+Help is welcome, especially real-whisper results and testing on Windows, Linux and non-English languages. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and see [ROADMAP.md](ROADMAP.md) for where the project is heading.
+
 ## Project documents
 
 - [SPEC.md](SPEC.md): the build specification
 - [DECISIONS.md](DECISIONS.md): trade-offs and measured limits
 - [CHANGELOG.md](CHANGELOG.md): release notes
 - [MANUAL_TESTS.md](MANUAL_TESTS.md): checks that need real hardware
+- [ROADMAP.md](ROADMAP.md): planned work
+- [SECURITY.md](SECURITY.md): reporting vulnerabilities
+- [THIRD_PARTY.md](THIRD_PARTY.md): dependency and model licenses
+
+SilentDictate is released under the [MIT License](LICENSE).
 
 The webcam lip-reading plugin is an [interface stub](src/silentdictate/plugins/vsr_webcam/README.md), and [ultrasonic sensing is out of scope](src/silentdictate/plugins/sonar_experimental/README.md).

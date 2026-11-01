@@ -750,6 +750,20 @@ class TestApp:
         assert not (isolated_data / "recordings").exists()
         assert "hello" not in stream.getvalue()  # dictated text never reaches the log
 
+    def test_status_explains_each_utterance_without_the_text(self, stub_vad: StubVad) -> None:
+        stream = io.StringIO()
+        session = app.Session(Config(), self.fake_pipeline(stub_vad, []), StatusIndicator(stream))
+        session.process(tone_1k())
+        line = stream.getvalue().splitlines()[-1]
+        assert "1.0 s" in line and "dBFS" in line and "5 characters sent" in line
+        assert "hello" not in stream.getvalue()
+
+    def test_status_flags_a_silent_mic(self, stub_vad: StubVad) -> None:
+        stream = io.StringIO()
+        session = app.Session(Config(), self.fake_pipeline(stub_vad, []), StatusIndicator(stream))
+        session.process(np.zeros(16000, np.float32))
+        assert "Microphone" in stream.getvalue()
+
     def test_save_audio_opt_in(self, stub_vad: StubVad, isolated_data: Path) -> None:
         cfg = Config()
         cfg.privacy.save_audio = True

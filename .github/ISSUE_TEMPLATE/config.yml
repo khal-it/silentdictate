@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/khal-it/silentdictate/discussions
+    about: Ask for help or share how you use SilentDictate
+  - name: Report a vulnerability
+    url: https://github.com/khal-it/silentdictate/security/advisories/new
+    about: Please report security problems privately

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from .asr.base import AsrBackend
-from .asr.guard import HallucinationGuard
+from .asr.guard import MIN_SPEECH_MS, HallucinationGuard
 from .audio_in import Audio
 from .postprocess import PostProcessor
 from .preprocess import preprocess
@@ -28,6 +28,8 @@ class Result:
 
     text: str = ""
     timings: dict[str, float] = field(default_factory=dict)
+    speech_ms: float = 0.0
+    outcome: str = ""
 
 
 class Pipeline:
@@ -57,14 +59,21 @@ class Pipeline:
         mark = time.perf_counter()
         processed = preprocess(audio)
         mark = timed("preprocess", mark)
-        speech = self.guard.has_speech(audio, processed)
+        result.speech_ms = self.guard.speech_ms(audio, processed)
         mark = timed("guard", mark)
-        if not speech:
+        if result.speech_ms < MIN_SPEECH_MS:
+            result.outcome = "no speech detected"
             return result
         transcript = self.asr.transcribe(processed)
         mark = timed("asr", mark)
         text = self.guard.clean(transcript.text, transcript.no_speech_prob)
         result.text = self.postprocessor.process(text) if text else ""
+        if not transcript.text:
+            result.outcome = "recognizer returned nothing"
+        elif not result.text:
+            result.outcome = "dropped as phantom"
+        else:
+            result.outcome = f"{len(result.text)} characters sent"
         mark = timed("postprocess", mark)
         if result.text:
             for sink in self.sinks:

@@ -9,6 +9,10 @@
 - **Added commands:** `download-models` (the spec requires a download command but doesn't name it) and `config-init`. All 12 spec commands are unchanged.
 - **`--set-config key=value`:** the CLI override route, so overrides work for every setting and need no per-setting flags.
 
+## Licensing
+
+- **MIT core, Piper optional:** `piper-tts` is GPL-3.0-or-later, so requiring it would have pushed the whole project toward GPL and restricted packaged builds. It's an optional extra and a dev dependency instead, so tests and fixtures still use it. Piper remains the default TTS backend when installed, and the virtual mic otherwise uses the OS voice. This departs from `SPEC.md` only in how Piper is installed.
+
 ## Milestone 2: ASR
 
 - **Silero through faster-whisper:** it bundles the ONNX model, so VAD needs neither torch nor a network connection.

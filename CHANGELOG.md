@@ -2,7 +2,7 @@
 
 ## 0.1.0 - 2026-11-01
 
-First release, covering spec milestones 1–7 and 9.
+First public release, covering spec milestones 1–7 and 9.
 
 ### Added
 
@@ -17,6 +17,8 @@ First release, covering spec milestones 1–7 and 9.
 ### Changed
 
 - `run` and `doctor` now trigger the macOS permission dialogs themselves.
+- Each utterance now reports its length, level, detected speech and outcome.
+- Piper moved to the optional `piper` extra because it's GPL-3.0-licensed.
 
 ### Not included
 

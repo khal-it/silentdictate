@@ -1,0 +1,21 @@
+name: Real-whisper result
+description: Share `bench --set personal` numbers, never audio
+labels: [benchmark]
+body:
+  - type: markdown
+    attributes:
+      value: Share numbers only. Don't upload recordings.
+  - type: textarea
+    id: output
+    attributes:
+      label: Output of `silentdictate bench --set personal`
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Microphone, distance, language and hardware
+      placeholder: Headset, 4 cm, English, M4 Mac
+    validations:
+      required: true

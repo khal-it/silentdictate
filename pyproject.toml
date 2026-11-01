@@ -3,6 +3,24 @@ name = "silentdictate"
 version = "0.1.0"
 description = "Whisper-quiet local dictation: faint-speech ASR delivered as typed text or a virtual microphone."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Khalit Hartmann" }]
+keywords = ["dictation", "speech-recognition", "whisper", "offline", "privacy", "accessibility", "voice-typing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Utilities",
+]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "faster-whisper>=1.1",
@@ -10,7 +28,6 @@ dependencies = [
     "huggingface-hub>=0.24",
     "jiwer>=3.0",
     "numpy>=1.26",
-    "piper-tts>=1.3",
     "platformdirs>=4.2",
     "pynput>=1.7",
     "pyobjc-framework-Quartz>=10; sys_platform == 'darwin'",
@@ -20,7 +37,15 @@ dependencies = [
     "tomli-w>=1.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/khal-it/silentdictate"
+Issues = "https://github.com/khal-it/silentdictate/issues"
+Changelog = "https://github.com/khal-it/silentdictate/blob/main/CHANGELOG.md"
+Roadmap = "https://github.com/khal-it/silentdictate/blob/main/ROADMAP.md"
+
 [project.optional-dependencies]
+# Piper is GPL-3.0-or-later, so it stays optional to keep the core under MIT.
+piper = ["piper-tts>=1.3"]
 metal = ["pywhispercpp>=1.3"]
 parakeet = ["onnx-asr[cpu,hub]>=0.7"]
 parakeet-cuda = ["nemo_toolkit[asr]>=2.0"]
@@ -40,7 +65,7 @@ pyinstaller = ["pyinstaller>=6"]
 silentdictate = "silentdictate.cli:main"
 
 [dependency-groups]
-dev = ["mypy>=1.10", "pytest>=8", "ruff>=0.5"]
+dev = ["mypy>=1.10", "piper-tts>=1.3", "pytest>=8", "ruff>=0.5"]
 
 [build-system]
 requires = ["hatchling"]

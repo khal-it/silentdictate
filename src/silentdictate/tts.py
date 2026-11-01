@@ -103,5 +103,5 @@ def create_tts(cfg: TtsConfig) -> TtsBackend:
     try:
         return PiperTts(cfg)
     except ImportError as exc:
-        print(f"Piper is unavailable ({exc}); using the OS voice.")
+        print(f"Piper is unavailable ({exc}); using the OS voice. Install silentdictate[piper].")
         return OsTts()

@@ -24,6 +24,9 @@ from .status import StatusIndicator, TrayIndicator
 from .tts import create_tts
 from .vad import VadSegmenter, silero_model
 
+MIC_SILENT_DB = -90.0
+MIC_SILENT_HINT = ". The mic is silent: check Privacy & Security > Microphone for your terminal"
+
 
 def permission_message(missing: list[str]) -> str:
     """Explain what to do after macOS shows its permission dialogs."""
@@ -97,12 +100,19 @@ class Session:
 
     def process(self, audio: Audio) -> None:
         """Process one utterance, reporting failures without ending the session."""
-        self.status.set("working", volume_feedback(rms_db(audio), self.calibration))
+        level = rms_db(audio)
+        self.status.set("working", volume_feedback(level, self.calibration))
         if self.cfg.privacy.save_audio:
             save_utterance(audio)
         try:
-            self.pipeline.process(audio)
-            self.status.set("idle")
+            result = self.pipeline.process(audio)
+            hint = MIC_SILENT_HINT if level < MIC_SILENT_DB else ""
+            seconds = audio.size / SAMPLE_RATE
+            self.status.set(
+                "idle",
+                f"{seconds:.1f} s, {level:.0f} dBFS, speech {result.speech_ms:.0f} ms: "
+                f"{result.outcome}{hint}",
+            )
         except InjectionError as exc:
             self.status.set("error", str(exc))
 

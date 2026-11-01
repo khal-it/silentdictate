@@ -463,6 +463,23 @@ class TestPipeline:
         result = self.build(stub_vad, asr, sink).process(np.zeros(16000, np.float32))
         assert result.text == "" and asr.calls == 0 and sink.texts == []
 
+    @pytest.mark.parametrize(
+        ("text", "outcome"),
+        [
+            ("hello", "5 characters sent"),
+            ("", "recognizer returned nothing"),
+            ("Thank you.", "dropped as phantom"),
+        ],
+    )
+    def test_outcome_after_speech(self, stub_vad: StubVad, text: str, outcome: str) -> None:
+        result = self.build(stub_vad, FakeAsr(text), FakeSink()).process(speech_tone())
+        assert result.outcome == outcome and result.speech_ms > 0
+
+    def test_outcome_without_speech(self, stub_vad: StubVad) -> None:
+        pipeline = self.build(stub_vad, FakeAsr(), FakeSink())
+        result = pipeline.process(np.zeros(16000, np.float32))
+        assert result.outcome == "no speech detected" and result.speech_ms == 0
+
     def test_phantom_text_is_not_delivered(self, stub_vad: StubVad) -> None:
         sink = FakeSink()
         asr = FakeAsr("Thank you.")
