@@ -1,0 +1,1 @@
+"""Pluggable output sinks."""

@@ -1,0 +1,70 @@
+[project]
+name = "silentdictate"
+version = "0.1.0"
+description = "Whisper-quiet local dictation: faint-speech ASR delivered as typed text or a virtual microphone."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "faster-whisper>=1.1",
+    "httpx>=0.27",
+    "huggingface-hub>=0.24",
+    "jiwer>=3.0",
+    "numpy>=1.26",
+    "piper-tts>=1.3",
+    "platformdirs>=4.2",
+    "pynput>=1.7",
+    "pyobjc-framework-Quartz>=10; sys_platform == 'darwin'",
+    "scipy>=1.12",
+    "sounddevice>=0.4.7",
+    "soundfile>=0.12",
+    "tomli-w>=1.0",
+]
+
+[project.optional-dependencies]
+metal = ["pywhispercpp>=1.3"]
+parakeet = ["onnx-asr[cpu,hub]>=0.7"]
+parakeet-cuda = ["nemo_toolkit[asr]>=2.0"]
+kokoro = ["kokoro-onnx>=0.4"]
+sapi = ["pyttsx3>=2.90"]
+finetune = [
+    "torch>=2.2",
+    "transformers>=4.44",
+    "peft>=0.12",
+    "ctranslate2>=4.3",
+]
+vsr = []
+tray = ["pystray>=0.19", "pillow>=10"]
+pyinstaller = ["pyinstaller>=6"]
+
+[project.scripts]
+silentdictate = "silentdictate.cli:main"
+
+[dependency-groups]
+dev = ["mypy>=1.10", "pytest>=8", "ruff>=0.5"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/silentdictate"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"scripts" = "silentdictate/_scripts"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["hardware: needs real audio/input hardware; excluded by default"]
+addopts = "-m 'not hardware'"
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
