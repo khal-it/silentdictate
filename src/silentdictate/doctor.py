@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import importlib
 import os
 import shutil
 import sys
@@ -35,9 +36,7 @@ def check_mic(backend: object = None) -> Check:
     """Open the default input briefly; on macOS this also triggers the permission prompt."""
     fix = "Allow microphone access in your OS privacy settings and check a mic is connected."
     try:
-        import sounddevice
-
-        sd: Any = backend or sounddevice
+        sd: Any = backend or importlib.import_module("sounddevice")
         with sd.InputStream(samplerate=16000, channels=1):
             pass
     except Exception as exc:  # noqa: BLE001 - PortAudio raises varied errors

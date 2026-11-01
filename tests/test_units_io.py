@@ -17,6 +17,7 @@ import soundfile
 from conftest import FakeSoundDevice, FakeStream, StubVad
 
 from silentdictate import app, cli, doctor, tts
+from silentdictate import controller as controller_module
 from silentdictate.asr import base as asr_base
 from silentdictate.asr import parakeet as pk
 from silentdictate.asr import whisper as wh
@@ -34,6 +35,7 @@ from silentdictate.bench import (
 )
 from silentdictate.config import AsrConfig, Config, PostprocessConfig, TtsConfig, data_dir
 from silentdictate.controller import (
+    SOCKETS_AVAILABLE,
     Controller,
     HotkeyListener,
     SocketServer,
@@ -51,6 +53,10 @@ from silentdictate.pipeline import Pipeline
 from silentdictate.plugins.vsr_webcam import WebcamVsrStub
 from silentdictate.postprocess import DefaultPostProcessor
 from silentdictate.status import StatusIndicator, TrayIndicator
+
+needs_unix_sockets = pytest.mark.skipif(
+    not SOCKETS_AVAILABLE, reason="Python on Windows has no AF_UNIX"
+)
 
 
 class Segment(SimpleNamespace):
@@ -515,6 +521,10 @@ class TestVirtualMic:
         assert order == ["played after 1"]
         assert [e[0] for e in keyboard.events] == ["press", "release"]
 
+    def test_ptt_does_not_import_pynput_until_used(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setitem(sys.modules, "pynput.keyboard", None)
+        vm.PttAssist("f9")  # pynput raises at import without a display server
+
     def test_ptt_tap(self) -> None:
         keyboard = FakeKeyboard()
         ptt = vm.PttAssist("x", "tap", keyboard)
@@ -650,6 +660,7 @@ class TestController:
         listener._release("alt_r")
         assert events == ["start"]
 
+    @needs_unix_sockets
     def test_socket_commands(self) -> None:
         controller, events = self.make()
         server = SocketServer(controller, Path("s.sock"))
@@ -670,12 +681,21 @@ class TestController:
         with pytest.raises(ValueError):
             send_command("nope")
 
+    @needs_unix_sockets
     def test_stale_socket_replaced(self) -> None:
         path = Path("s.sock")
         path.write_text("stale")
         server = SocketServer(self.make()[0], path)
         server.start()
         server.stop()
+
+    def test_no_unix_sockets_degrades_cleanly(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(controller_module, "SOCKETS_AVAILABLE", False)
+        server = SocketServer(self.make()[0], Path("s.sock"))
+        server.start()  # `run` calls this on every OS, so it must not crash
+        server.stop()
+        with pytest.raises(OSError, match="Unix sockets"):
+            send_command("toggle")
 
     def test_wayland_detection(self) -> None:
         assert is_wayland({"XDG_SESSION_TYPE": "wayland"})
@@ -770,6 +790,25 @@ class TestApp:
         session = app.Session(cfg, self.fake_pipeline(stub_vad, []), StatusIndicator(io.StringIO()))
         session.process(np.full(16000, 0.1, np.float32))
         assert len(list((isolated_data / "recordings").glob("*.wav"))) == 1
+
+    @pytest.mark.parametrize("error", [OSError, ImportError, LookupError, RuntimeError])
+    def test_sink_failures_do_not_kill_the_worker(
+        self, stub_vad: StubVad, error: type[Exception]
+    ) -> None:
+        def fail(_text: str) -> None:
+            raise error("device gone")
+
+        stream = io.StringIO()
+        session = app.Session(
+            Config(),
+            self.fake_pipeline(stub_vad, [SimpleNamespace(deliver=fail)]),
+            StatusIndicator(stream),
+        )
+        session.worker.start()
+        session.submit(tone_1k())
+        session.submit(tone_1k())
+        session.close()
+        assert stream.getvalue().count("error: device gone") == 2
 
     def test_injection_failure_is_reported(self, stub_vad: StubVad) -> None:
         def fail(_text: str) -> None:
@@ -1074,6 +1113,7 @@ class TestCli:
         assert cli.main(["toggle"]) == 1
         assert "silentdictate run" in capsys.readouterr().err
 
+    @needs_unix_sockets
     def test_control_with_server(self) -> None:
         events: list[str] = []
         server = SocketServer(Controller(lambda: events.append("start"), lambda: None))
@@ -1167,6 +1207,7 @@ class TestCli:
         assert cli.main(["doctor"]) == 1
 
 
+@needs_unix_sockets
 def test_recorder_threads_do_not_leak() -> None:
     before = threading.active_count()
     server = SocketServer(Controller(lambda: None, lambda: None))

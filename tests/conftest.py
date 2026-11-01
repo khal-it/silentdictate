@@ -97,7 +97,7 @@ def block_network(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
         raise AssertionError("outbound network use while blocked")
 
     def connect(self: socket.socket, address: Any) -> None:
-        if self.family == socket.AF_UNIX:
+        if self.family == getattr(socket, "AF_UNIX", None):
             real_connect(self, address)
         else:
             refuse()

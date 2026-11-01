@@ -15,6 +15,8 @@ import platformdirs
 from .config import APP_NAME
 
 COMMANDS = {"toggle", "ptt-start", "ptt-stop"}
+# Python on Windows has no AF_UNIX, and only Wayland needs the socket.
+SOCKETS_AVAILABLE = hasattr(socket, "AF_UNIX")
 
 
 def is_wayland(env: Mapping[str, str] = os.environ) -> bool:
@@ -124,7 +126,9 @@ class SocketServer:
         self._thread: threading.Thread | None = None
 
     def start(self) -> None:
-        """Bind the socket and serve on a daemon thread."""
+        """Bind the socket and serve on a daemon thread, if the OS has Unix sockets."""
+        if not SOCKETS_AVAILABLE:
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.path.unlink(missing_ok=True)
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -163,6 +167,8 @@ def send_command(name: str, path: Path | None = None) -> str:
     """Send a command to a running ``silentdictate run``."""
     if name not in COMMANDS:
         raise ValueError(f"unknown command {name!r}")
+    if not SOCKETS_AVAILABLE:
+        raise OSError("this command needs Unix sockets; use the hotkey on this OS")
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.settimeout(2)
         sock.connect(str(path or socket_path()))

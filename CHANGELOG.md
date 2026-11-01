@@ -18,6 +18,8 @@ First public release, covering spec milestones 1–7 and 9.
 
 - `run` and `doctor` now trigger the macOS permission dialogs themselves.
 - Each utterance now reports its length, level, detected speech and outcome.
+- `run` no longer needs Unix sockets, so it can start on Windows, where `toggle`, `ptt-start` and `ptt-stop` report that they're unavailable.
+- PTT assist loads `pynput` only when used, and a failed utterance no longer stops the session.
 - Piper moved to the optional `piper` extra because it's GPL-3.0-licensed.
 
 ### Not included

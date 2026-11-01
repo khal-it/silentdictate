@@ -113,7 +113,8 @@ class Session:
                 f"{seconds:.1f} s, {level:.0f} dBFS, speech {result.speech_ms:.0f} ms: "
                 f"{result.outcome}{hint}",
             )
-        except InjectionError as exc:
+        except (InjectionError, OSError, ImportError, LookupError, RuntimeError) as exc:
+            # One failed utterance must not kill the worker thread and silently end dictation.
             self.status.set("error", str(exc))
 
     def _work(self) -> None:

@@ -93,11 +93,17 @@ class PttAssist:
     """Holds or taps a key around playback for apps that need push-to-talk."""
 
     def __init__(self, key: str, mode: str = "hold", keyboard: Any = None) -> None:
-        from pynput.keyboard import Controller, Key
-
-        self.key: Any = getattr(Key, key, key)
+        self.key: Any = key
         self.mode = mode
-        self.keyboard = keyboard or Controller()
+        self.keyboard = keyboard
+
+    def _ready(self) -> None:
+        # Imported late: pynput raises at import time without a display server.
+        if self.keyboard is None:
+            from pynput.keyboard import Controller, Key
+
+            self.key = getattr(Key, self.key, self.key)
+            self.keyboard = Controller()
 
     def _tap(self) -> None:
         self.keyboard.press(self.key)
@@ -105,10 +111,12 @@ class PttAssist:
 
     def begin(self) -> None:
         """Run before playback."""
+        self._ready()
         self.keyboard.press(self.key) if self.mode == "hold" else self._tap()
 
     def end(self) -> None:
         """Run after playback, even if it failed."""
+        self._ready()
         self.keyboard.release(self.key) if self.mode == "hold" else self._tap()
 
 
