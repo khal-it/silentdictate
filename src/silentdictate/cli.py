@@ -126,9 +126,13 @@ def cmd_setup_virtual_mic(_cfg: Config, args: argparse.Namespace) -> int:
 
 def cmd_doctor(cfg: Config, _args: argparse.Namespace) -> int:
     """Check the environment."""
-    from .doctor import report, run_checks
+    from .app import permission_message
+    from .doctor import report, request_macos_permissions, run_checks
 
-    return 1 if report(run_checks(cfg)) else 0
+    failures = report(run_checks(cfg))
+    if sys.platform == "darwin" and (missing := request_macos_permissions()):
+        print(permission_message(missing))
+    return 1 if failures else 0
 
 
 def cmd_control(_cfg: Config, args: argparse.Namespace) -> int:

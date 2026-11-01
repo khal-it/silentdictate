@@ -29,7 +29,7 @@ silentdictate calibrate
 silentdictate run
 ```
 
-Hold **Right Option**, whisper and release. The first run needs permission for the microphone, Accessibility and Input Monitoring; `silentdictate doctor` shows what's missing. On Apple Silicon, `uv tool install '.[metal]'` adds whisper.cpp with Metal.
+Hold **Right Option**, whisper and release. On first run, macOS asks for microphone, Accessibility and Input Monitoring access. Its dialogs open System Settings, where you turn on your terminal app and then restart it. `silentdictate doctor` shows the same dialogs and what's still missing. On Apple Silicon, `uv tool install '.[metal]'` adds whisper.cpp with Metal.
 
 ### Windows
 

@@ -723,6 +723,19 @@ class TestApp:
         both = Config(output_mode="both", ptt_assist_key="x", monitor_device="m")
         assert len(app.build_sinks(both)) == 2
 
+    def test_run_stops_with_instructions_when_permission_missing(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        def no_models(*_args: Any) -> Any:
+            raise AssertionError("models must not load")
+
+        monkeypatch.setattr(app.sys, "platform", "darwin")
+        monkeypatch.setattr(app, "request_macos_permissions", lambda: ["Accessibility"])
+        monkeypatch.setattr(app, "build_pipeline", no_models)
+        with pytest.raises(SystemExit):
+            app.run(Config())
+        assert "macOS needs Accessibility" in capsys.readouterr().err
+
     def test_session_flow_and_no_audio_saved(self, stub_vad: StubVad, isolated_data: Path) -> None:
         delivered: list[str] = []
         sink = SimpleNamespace(deliver=delivered.append)
@@ -805,6 +818,22 @@ class TestDoctor:
         monkeypatch.setattr(doctor, "input_monitoring_granted", lambda: True)
         accessibility, monitoring = doctor.check_macos()
         assert not accessibility.ok and "Accessibility" in accessibility.detail and monitoring.ok
+
+    def test_request_reports_only_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(doctor, "prompt_accessibility", lambda: True)
+        monkeypatch.setattr(doctor, "prompt_input_monitoring", lambda: False)
+        assert doctor.request_macos_permissions() == ["Input Monitoring"]
+
+    @pytest.mark.skipif(sys.platform != "darwin", reason="macOS frameworks")
+    def test_macos_symbols_resolve_without_prompting(self) -> None:
+        import ctypes
+
+        ax = ctypes.cdll.LoadLibrary(ts._AX_LIB)
+        cf = ctypes.cdll.LoadLibrary(ts._CF_LIB)
+        assert ax.AXIsProcessTrustedWithOptions and cf.CFDictionaryCreate and cf.CFRelease
+        assert ctypes.c_void_p.in_dll(ax, "kAXTrustedCheckOptionPrompt").value
+        assert ctypes.c_void_p.in_dll(cf, "kCFBooleanTrue").value
+        assert ctypes.cdll.LoadLibrary(doctor._CORE_GRAPHICS).CGRequestListenEventAccess
 
     def test_gpu_absence_is_not_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(doctor, "cuda_available", lambda: False)
@@ -1109,7 +1138,17 @@ class TestCli:
         assert cli.main(["config-init"]) == 0
         assert (tmp_path / "config.toml").exists()
 
+    def test_doctor_shows_permission_help(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        monkeypatch.setattr(cli.sys, "platform", "darwin")
+        monkeypatch.setattr(doctor, "run_checks", lambda cfg: [])
+        monkeypatch.setattr(doctor, "request_macos_permissions", lambda: ["Input Monitoring"])
+        assert cli.main(["doctor"]) == 0
+        assert "macOS needs Input Monitoring" in capsys.readouterr().out
+
     def test_doctor_exit_code(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(doctor, "request_macos_permissions", lambda: [])
         monkeypatch.setattr(doctor, "run_checks", lambda cfg: [doctor.Check("x", False)])
         assert cli.main(["doctor"]) == 1
 

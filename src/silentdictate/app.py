@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import queue
+import sys
 import threading
 import time
 from pathlib import Path
@@ -14,6 +15,7 @@ from .asr.guard import HallucinationGuard
 from .audio_in import SAMPLE_RATE, Audio, Calibration, Recorder, rms_db, volume_feedback
 from .config import Config, data_dir
 from .controller import Controller, HotkeyListener, SocketServer, is_wayland
+from .doctor import request_macos_permissions
 from .output.type_sink import InjectionError, TypeSink, select_backends
 from .output.virtual_mic_sink import PttAssist, SoundDevicePlayer, VirtualMicSink
 from .pipeline import Pipeline, Sink
@@ -21,6 +23,14 @@ from .postprocess import DefaultPostProcessor
 from .status import StatusIndicator, TrayIndicator
 from .tts import create_tts
 from .vad import VadSegmenter, silero_model
+
+
+def permission_message(missing: list[str]) -> str:
+    """Explain what to do after macOS shows its permission dialogs."""
+    return (
+        f"macOS needs {' and '.join(missing)}. Use the dialog to open System Settings, turn on "
+        "your terminal app, then restart it and run this command again."
+    )
 
 
 def build_sinks(cfg: Config) -> list[Sink]:
@@ -109,6 +119,11 @@ class Session:
 def run(cfg: Config) -> None:
     """Dictate until interrupted."""
     status: StatusIndicator = TrayIndicator() if cfg.tray else StatusIndicator()
+    if sys.platform == "darwin":
+        missing = request_macos_permissions()
+        if missing:
+            status.set("error", permission_message(missing))
+            raise SystemExit(1)
     status.set("working", "loading models")
     session = Session(cfg, build_pipeline(cfg), status)
     segmenter = None

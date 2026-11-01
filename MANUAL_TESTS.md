@@ -25,7 +25,8 @@ The automated numbers come from synthetic speech, not your voice. The guard's se
 ## 3. macOS
 
 - [ ] `silentdictate doctor` reports the mic, Accessibility and Input Monitoring correctly
-- [ ] With Accessibility off, dictation prints the exact fix steps
+- [ ] With Accessibility and Input Monitoring off, `run` shows the macOS dialogs, prints the next steps and stops
+- [ ] After turning them on and restarting the terminal, `run` starts with no dialogs
 - [ ] Right-Option hold records and types into TextEdit, a browser and Terminal
 - [ ] Non-ASCII text and emoji arrive intact
 - [ ] Text over 2,000 characters pastes, and your previous clipboard text returns

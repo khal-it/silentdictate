@@ -181,7 +181,8 @@ def test_c8_core_pipeline_offline(
     assert all(pipeline.process(load_audio(s.path)).text for s in faint)
     for sample in load_set(fixtures_root / "silence")[::10]:
         assert pipeline.process(load_audio(sample.path)).text == ""
-    assert loopback_wer(SENTENCES[:2], tts, asr) <= 0.05
+    # All 20 sentences: over a handful, one misheard word alone would exceed 5%.
+    assert loopback_wer(SENTENCES[:20], tts, asr) <= 0.05
 
 
 ARTIFACTS = [

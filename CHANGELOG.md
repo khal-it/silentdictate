@@ -14,6 +14,10 @@ First release, covering spec milestones 1–7 and 9.
 - Enrollment, LoRA fine-tuning, CTranslate2 export and `bench --set personal` A/B testing.
 - `doctor`, `bench`, `purge-data`, `download-models`, setup scripts and generated fixtures.
 
+### Changed
+
+- `run` and `doctor` now trigger the macOS permission dialogs themselves.
+
 ### Not included
 
 - The webcam VSR plugin is an interface stub (milestone 8).

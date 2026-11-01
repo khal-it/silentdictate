@@ -15,9 +15,10 @@ from .audio_in import find_device, list_devices
 from .config import Config
 from .controller import is_wayland
 from .models import is_cached, piper_voice_dir, verify, whisper_dir
-from .output.type_sink import ACCESSIBILITY_FIX, ax_trusted, select_backends
+from .output.type_sink import ACCESSIBILITY_FIX, ax_trusted, prompt_accessibility, select_backends
 
 _IOKIT = "/System/Library/Frameworks/IOKit.framework/IOKit"
+_CORE_GRAPHICS = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics"
 _LISTEN_EVENT = 1
 
 
@@ -47,6 +48,25 @@ def check_mic(backend: object = None) -> Check:
 def input_monitoring_granted() -> bool:
     """Return True if macOS Input Monitoring allows the global hotkey."""
     return int(ctypes.cdll.LoadLibrary(_IOKIT).IOHIDCheckAccess(_LISTEN_EVENT)) == 0
+
+
+def prompt_input_monitoring() -> bool:
+    """Show the macOS Input Monitoring dialog if needed and return the current state."""
+    request = ctypes.cdll.LoadLibrary(_CORE_GRAPHICS).CGRequestListenEventAccess
+    request.restype = ctypes.c_bool
+    return bool(request())
+
+
+def request_macos_permissions() -> list[str]:
+    """Ask macOS to show its dialogs and return the permissions still missing.
+
+    macOS never lets an app grant these to itself; the user approves them in System Settings.
+    """
+    results = {
+        "Accessibility": prompt_accessibility(),
+        "Input Monitoring": prompt_input_monitoring(),
+    }
+    return [name for name, granted in results.items() if not granted]
 
 
 def check_macos() -> list[Check]:

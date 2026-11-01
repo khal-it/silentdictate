@@ -20,6 +20,7 @@ ACCESSIBILITY_FIX = (
     "Accessibility, enable your terminal (or the silentdictate app), then restart it."
 )
 _AX_LIB = "/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices"
+_CF_LIB = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation"
 
 
 class InjectionError(RuntimeError):
@@ -161,7 +162,26 @@ class WlCopyBackend:
 
 def ax_trusted() -> bool:
     """Return True if this process has macOS Accessibility permission."""
-    return bool(ctypes.cdll.LoadLibrary(_AX_LIB).AXIsProcessTrusted())
+    trusted = ctypes.cdll.LoadLibrary(_AX_LIB).AXIsProcessTrusted
+    trusted.restype = ctypes.c_bool
+    return bool(trusted())
+
+
+def prompt_accessibility() -> bool:
+    """Show the macOS Accessibility dialog if needed and return the current state."""
+    ax = ctypes.cdll.LoadLibrary(_AX_LIB)
+    cf = ctypes.cdll.LoadLibrary(_CF_LIB)
+    keys = (ctypes.c_void_p * 1)(ctypes.c_void_p.in_dll(ax, "kAXTrustedCheckOptionPrompt"))
+    values = (ctypes.c_void_p * 1)(ctypes.c_void_p.in_dll(cf, "kCFBooleanTrue"))
+    cf.CFDictionaryCreate.restype = ctypes.c_void_p
+    cf.CFDictionaryCreate.argtypes = [ctypes.c_void_p] * 3 + [ctypes.c_long] + [ctypes.c_void_p] * 2
+    options = cf.CFDictionaryCreate(None, keys, values, 1, None, None)
+    ax.AXIsProcessTrustedWithOptions.restype = ctypes.c_bool
+    ax.AXIsProcessTrustedWithOptions.argtypes = [ctypes.c_void_p]
+    granted = bool(ax.AXIsProcessTrustedWithOptions(options))
+    cf.CFRelease.argtypes = [ctypes.c_void_p]
+    cf.CFRelease(options)
+    return granted
 
 
 class QuartzBackend:
