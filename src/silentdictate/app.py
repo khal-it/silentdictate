@@ -69,7 +69,7 @@ def build_pipeline(
     return Pipeline(
         asr or create_backend(cfg.asr),
         HallucinationGuard(silero_model(), cfg.vad.threshold),
-        DefaultPostProcessor(cfg.postprocess),
+        DefaultPostProcessor(cfg.postprocess, language=cfg.asr.language),
         build_sinks(cfg) if sinks is None else sinks,
     )
 

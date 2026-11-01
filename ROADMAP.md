@@ -11,7 +11,7 @@ The goal is the best private, free way to dictate without being overheard. Prior
 
 ## Next: make it pleasant
 
-- Multilingual support: better language defaults, and spoken punctuation in German and beyond
+- Multilingual support: better language defaults, and spoken punctuation beyond English and German
 - Live partial results while you speak
 - Per-app profiles, such as different vocabulary for a terminal and an email client
 - A guided first-run setup

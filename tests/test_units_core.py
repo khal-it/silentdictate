@@ -326,7 +326,18 @@ class TestGuard:
 
     @pytest.mark.parametrize(
         "text",
-        ["Thank you.", "Thanks for watching!", "you", "[Music]", "(silence)", "♪♪", "  ", "BYE."],
+        [
+            "Thank you.",
+            "Thanks for watching!",
+            "you",
+            "[Music]",
+            "(silence)",
+            "♪♪",
+            "  ",
+            "BYE.",
+            "Vielen Dank fürs Zuschauen!",
+            "Untertitel der Amara.org-Community",
+        ],
     )
     def test_known_phantoms(self, stub_vad: StubVad, text: str) -> None:
         assert self.guard(stub_vad).clean(text) == ""
@@ -361,6 +372,36 @@ class TestPostprocess:
     )
     def test_ordinary_words_kept(self, text: str) -> None:
         assert apply_spoken_punctuation(text) == text
+
+    @pytest.mark.parametrize(
+        ("spoken", "expected"),
+        [
+            ("Hallo Komma Welt Punkt", "Hallo, Welt."),
+            ("Ist das fertig Fragezeichen", "Ist das fertig?"),
+            ("Achtung Ausrufezeichen", "Achtung!"),
+            ("Liste Doppelpunkt", "Liste:"),
+            ("erste Zeile neue Zeile zweite Zeile", "erste Zeile\nzweite Zeile"),
+            ("eins neuer Absatz zwei", "eins\n\nzwei"),
+            ("Aufruf Klammer auf x Klammer zu", "Aufruf(x)"),
+        ],
+    )
+    def test_german_commands(self, spoken: str, expected: str) -> None:
+        assert apply_spoken_punctuation(spoken, "de") == expected
+
+    def test_german_ordinary_noun_is_kept(self) -> None:
+        text = "Der Punkt ist wichtig"
+        assert apply_spoken_punctuation(text, "de") == text
+
+    def test_commands_follow_the_language(self) -> None:
+        assert apply_spoken_punctuation("hello komma world") == "hello komma world"
+        assert apply_spoken_punctuation("hallo comma welt", "de") == "hallo comma welt"
+
+    def test_auto_detect_understands_both(self) -> None:
+        assert apply_spoken_punctuation("hallo komma world comma ok", "") == "hallo, world, ok"
+
+    def test_processor_uses_its_language(self) -> None:
+        processor = DefaultPostProcessor(PostprocessConfig(), language="de")
+        assert processor.process("fertig Punkt") == "fertig."
 
     def test_replacements_whole_phrase(self) -> None:
         table = {"pie test": "pytest", "c": "C++"}

@@ -26,6 +26,12 @@ KNOWN_HALLUCINATIONS = {
     "you",
     "bye",
     "bye bye",
+    "danke fürs zuschauen",
+    "vielen dank fürs zuschauen",
+    "vielen dank für ihre aufmerksamkeit",
+    "untertitel der amara org community",
+    "untertitelung des zdf 2020",
+    "untertitel im auftrag des zdf für funk 2017",
 }
 _NON_SPEECH = re.compile(r"\[[^\]]*\]|\([^)]*\)|[♪♫]")
 

@@ -4,7 +4,7 @@ Thanks for helping. The most valuable contributions right now don't all involve 
 
 - **Real-whisper results:** the automated numbers come from synthetic speech, so real measurements matter most.
 - **Platform testing:** work through [MANUAL_TESTS.md](MANUAL_TESTS.md) on your OS and report what happens.
-- **Languages:** spoken punctuation and phantom-text filters are English-only so far.
+- **Languages:** spoken punctuation and phantom-text filters cover English and German so far.
 
 Issues labeled `good first issue` are a good place to start.
 
