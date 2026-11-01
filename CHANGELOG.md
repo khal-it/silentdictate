@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- German spoken punctuation and German phantom-text filters, chosen from `asr.language`.
+
 ## 0.1.0 - 2026-11-01
 
 First public release, covering spec milestones 1–7 and 9.

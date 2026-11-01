@@ -36,6 +36,21 @@ _PHRASE_END = {
     "period": ".",
     "colon": ":",
 }
+# German nouns are capitalized by Whisper; matching ignores case.
+_ANYWHERE_DE = {
+    "neuer absatz": "\n\n",
+    "neue zeile": "\n",
+    "komma": ",",
+    "semikolon": ";",
+    "klammer auf": "(",
+    "klammer zu": ")",
+}
+_PHRASE_END_DE = {
+    "fragezeichen": "?",
+    "ausrufezeichen": "!",
+    "doppelpunkt": ":",
+    "punkt": ".",
+}
 _END = r"(?=[.,!?;:]*\s*$|[.,!?;:]+\s)"
 
 
@@ -44,11 +59,21 @@ def _sub_command(text: str, spoken: str, symbol: str, end: str) -> str:
     return pattern.sub(lambda _m: symbol, text)
 
 
-def apply_spoken_punctuation(text: str) -> str:
+def _tables(language: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Return command tables; an empty language means auto-detect, so both apply."""
+    if language == "de":
+        return _ANYWHERE_DE, _PHRASE_END_DE
+    if language:
+        return _ANYWHERE, _PHRASE_END
+    return {**_ANYWHERE, **_ANYWHERE_DE}, {**_PHRASE_END, **_PHRASE_END_DE}
+
+
+def apply_spoken_punctuation(text: str, language: str = "en") -> str:
     """Replace spoken punctuation commands with symbols."""
-    for spoken, symbol in _ANYWHERE.items():
+    anywhere, phrase_end = _tables(language)
+    for spoken, symbol in anywhere.items():
         text = _sub_command(text, spoken, symbol, "")
-    for spoken, symbol in _PHRASE_END.items():
+    for spoken, symbol in phrase_end.items():
         text = _sub_command(text, spoken, symbol, _END)
     text = re.sub(r"\(\s+", "(", text)
     text = re.sub(r"([,;:.!?])(?=[^\s\d)\"'])", r"\1 ", text)
@@ -107,13 +132,15 @@ class PostProcessor(Protocol):
 class DefaultPostProcessor:
     """Replacements, then spoken punctuation, then optional LLM cleanup."""
 
-    def __init__(self, cfg: PostprocessConfig, cleanup: Any = None) -> None:
+    def __init__(self, cfg: PostprocessConfig, cleanup: Any = None, language: str = "en") -> None:
         self.cfg = cfg
+        self.language = language
         self.cleanup = cleanup
         if cleanup is None and cfg.llm_cleanup:
             self.cleanup = LlmCleanup(cfg.llm_endpoint, cfg.llm_model)
 
     def process(self, text: str) -> str:
         """Transform recognized text."""
-        text = apply_spoken_punctuation(apply_replacements(text, self.cfg.replacements))
+        replaced = apply_replacements(text, self.cfg.replacements)
+        text = apply_spoken_punctuation(replaced, self.language)
         return self.cleanup(text) if self.cleanup and text else text

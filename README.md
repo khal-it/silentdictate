@@ -110,7 +110,7 @@ The main settings are:
 | `postprocess.llm_cleanup` | `false` | Uses a local Ollama or llama.cpp endpoint only |
 | `privacy.save_audio` | `false` | Saves utterances under the app data dir |
 
-Say "period", "comma", "question mark", "new line", "open paren" and similar for punctuation.
+Say "period", "comma", "question mark", "new line", "open paren" and similar for punctuation. With `asr.language = "de"`, say "Punkt", "Komma", "Fragezeichen", "neue Zeile" or "Klammer auf". Auto-detect understands both.
 
 ## Fine-tuning
 
